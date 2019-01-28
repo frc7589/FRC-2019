@@ -11,8 +11,12 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PWM;
+import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import frc.util.RangeMapper;
 
@@ -25,10 +29,8 @@ import frc.util.RangeMapper;
  */
 public class Robot extends TimedRobot {
 
-    private Joystick stick = new Joystick(0);
-    
-    Compressor compressor = new Compressor(48);
-
+    private XboxController stick = new XboxController(0);
+    private Servo svo;
 
     /**
      * This function is run when the robot is first started up and should be
@@ -36,13 +38,14 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotInit() {
-        compressor.start();
+        svo = new Servo(9);
+        svo.setBounds(2, 0, 0, 0, 1); // set PWM pulse width to fit Actuonix L16 Micro Linear Actuator
+        svo.set(0.0); // retract the linear actuator while init
     }
 
     @Override
     public void disabledInit() {
-        super.disabledInit();
-        compressor.stop();
+        svo.set(0.0);
     }
 
     /**
@@ -89,9 +92,11 @@ public class Robot extends TimedRobot {
     /**
      * This function is called periodically during operator control.
      */
+    private RangeMapper svoRange = new RangeMapper(0.0,1.0); // RangeMapper for Servo
     @Override
     public void teleopPeriodic() {
-        
+        int pos = (int)svoRange.mapRange(stick.getTriggerAxis(Hand.kRight));
+        svo.set(pos); // set position of linear actuator using Xbox Stick
     }
 
     /**
