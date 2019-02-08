@@ -7,18 +7,17 @@
 
 package frc.robot3;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
-import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PWM;
-import edu.wpi.first.wpilibj.Servo;
-import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.GenericHID.Hand;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.CounterBase.EncodingType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.util.RangeMapper;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDSourceType;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -29,23 +28,33 @@ import frc.util.RangeMapper;
  */
 public class Robot extends TimedRobot {
 
-    private XboxController stick = new XboxController(0);
-    private Servo svo;
+    private XboxController stick;
+    
+    private Encoder enc;
+    private WPI_VictorSPX motor;
+    private PIDController pid;
 
+    private double spd=0.0;
     /**
      * This function is run when the robot is first started up and should be
      * used for any initialization code.
      */
     @Override
     public void robotInit() {
-        svo = new Servo(9);
-        svo.setBounds(2, 0, 0, 0, 1); // set PWM pulse width to fit Actuonix L16 Micro Linear Actuator
-        svo.set(0.0); // retract the linear actuator while init
+        stick = new XboxController(0);
+        
+        enc = new Encoder(0,1,true,EncodingType.k4X);
+        motor = new WPI_VictorSPX(4);
+        pid = new PIDController(0.0015,0.003,0.0001875,enc,motor);
+        enc.setPIDSourceType(PIDSourceType.kRate);
+        pid.setPercentTolerance(10);
+        pid.setInputRange(-750, 750);
+        pid.setOutputRange(-1.0, 1.0);
     }
 
     @Override
     public void disabledInit() {
-        svo.set(0.0);
+        pid.disable();
     }
 
     /**
@@ -58,7 +67,18 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotPeriodic() {
-
+        spd = SmartDashboard.getNumber("Speed", 0.0);
+        SmartDashboard.putNumber("Speed", spd);
+        SmartDashboard.putNumber("Encoder Speed", enc.getRate());
+        SmartDashboard.putNumber("Encoder PID", enc.pidGet());
+        SmartDashboard.putNumber("PID out", pid.get());
+        SmartDashboard.putBoolean("PID State", pid.isEnabled());
+        SmartDashboard.putData("PID",pid);
+        SmartDashboard.putNumber("PID Error", pid.getError());
+        if(SmartDashboard.getBoolean("PID Reset", false)){
+            pid.reset();
+        }
+        SmartDashboard.putBoolean("PID Reset", false);
     }
 
     /**
@@ -87,16 +107,15 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopInit() {
-        
+        pid.enable();
     }
     /**
      * This function is called periodically during operator control.
      */
-    private RangeMapper svoRange = new RangeMapper(0.0,1.0); // RangeMapper for Servo
+    private RangeMapper pidMap = new RangeMapper(-750.0,750.0);
     @Override
     public void teleopPeriodic() {
-        int pos = (int)svoRange.mapRange(stick.getTriggerAxis(Hand.kRight));
-        svo.set(pos); // set position of linear actuator using Xbox Stick
+        pid.setSetpoint(pidMap.mapRange(spd));
     }
 
     /**
