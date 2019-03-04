@@ -15,6 +15,7 @@ import edu.wpi.first.hal.sim.DIOSim;
 import edu.wpi.first.hal.sim.mockdata.DIODataJNI;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PWM;
@@ -54,6 +55,10 @@ public class Robot extends TimedRobot {
   public static DoubleSolenoid sol2;
 
   public DigitalInput limitswitch;
+
+  public DigitalOutput light1;
+  public DigitalOutput light2;
+  public DigitalOutput light3;
 
   private POVButton pov0;
   private POVButton pov90;
@@ -105,6 +110,10 @@ public class Robot extends TimedRobot {
     enc = new Encoder(3, 2);
 
     limitswitch = new DigitalInput(1);
+
+    light1 = new DigitalOutput(4);
+    light2 = new DigitalOutput(5);
+    light3 = new DigitalOutput(6);
 
     pov0 = new POVButton(stick, 0);
     pov90 = new POVButton(stick, 90);
@@ -263,18 +272,7 @@ public class Robot extends TimedRobot {
       gate.set(0.0);
     }
     
-    if(stick2.getXButton()){
-        sol.set(DoubleSolenoid.Value.kForward);
-      }
-    else if(stick2.getAButton()){
-        sol.set(DoubleSolenoid.Value.kReverse);
-      }
-    if(stick2.getYButton()){
-        sol2.set(DoubleSolenoid.Value.kForward);
-    }
-    else if(stick2.getBButton()){
-        sol2.set(DoubleSolenoid.Value.kReverse);
-      }
+    
       
     if(limit){
       enc.reset();   
@@ -283,6 +281,15 @@ public class Robot extends TimedRobot {
     if(stick.getStartButton()){
       enc.reset();
     }
+
+    if(gearbox == 1) light1.set(false);
+    else light1.set(true);
+
+    if(gearbox == 2) light2.set(false);
+    else light2.set(true);
+
+    if(gearbox == 3) light3.set(false);
+    else light3.set(true);
 
       System.out.println(enc.get());
   }
@@ -293,11 +300,5 @@ public class Robot extends TimedRobot {
   public void testPeriodic() {
   }
 
-  public void disableInit(){
-    comp.stop();
-    sol.set(DoubleSolenoid.Value.kOff);
-    sol2.set(DoubleSolenoid.Value.kOff);
-
-    System.out.printf("DISABLED\n");
-  }
+  
 }
